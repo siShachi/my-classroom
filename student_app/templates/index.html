@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to University SMS</h1>
+    <p class="lead">A simple and effective student management system.</p>
+    <hr class="my-4">
+    <p>Use the navigation above to access your courses and assignments.</p>
+    {% if current_user.is_authenticated %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('courses.index') }}">Go to My Courses</a>
+    {% else %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.login') }}">Login</a>
+    <a class="btn btn-secondary btn-lg" href="{{ url_for('auth.register') }}">Register</a>
+    {% endif %}
+</div>
+{% endblock %}

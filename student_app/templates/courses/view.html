@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ course.code }}: {{ course.title }} - SMS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ course.code }}: {{ course.title }}</h1>
+        <p class="lead">{{ course.description }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('assignments.index', course_id=course.id) }}" class="btn btn-primary">Assignments</a>
+        {% if current_user.role == 'student' %}
+        <a href="{{ url_for('courses.unenroll', course_id=course.id) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to unenroll from this course?')">Unenroll</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Announcements</h3>
+                {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#announcementModal">Add Announcement</button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if announcements %}
+                {% for announcement in announcements %}
+                <div class="announcement mb-3">
+                    <h4>{{ announcement.title }}</h4>
+                    <p class="text-muted">Posted by {{ announcement.author.first_name }} {{ announcement.author.last_name }} on {{ announcement.created_at.strftime('%B %d, %Y at %H:%M') }}</p>
+                    <p>{{ announcement.content }}</p>
+                    <hr>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p>No announcements yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Course Materials</h3>
+                {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#materialModal">Add Material</button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if materials %}
+                <ul class="list-group">
+                    {% for material in materials %}
+                    <li class="list-group-item">
+                        <h5>{{ material.title }}</h5>
+                        <p>{{ material.description }}</p>
+                        {% if material.file_path %}
+                        <a href="{{ url_for('static', filename=material.file_path) }}" class="btn btn-sm btn-outline-primary" target="_blank">Download</a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p>No materials uploaded yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Course Information</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Instructor:</strong> {{ course.instructor.first_name }} {{ course.instructor.last_name }}</p>
+                <p><strong>Created:</strong> {{ course.created_at.strftime('%B %d, %Y') }}</p>
+                <p><strong>Students Enrolled:</strong> {{ course.students.count() }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcement Modal -->
+{% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
+<div class="modal fade" id="announcementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Announcement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('courses.add_announcement', course_id=course.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="announcement_title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="announcement_title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="announcement_content" class="form-label">Content</label>
+                        <textarea class="form-control" id="announcement_content" name="content" rows="4" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post Announcement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Material Modal -->
+<div class="modal fade" id="materialModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Course Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('courses.add_material', course_id=course.id) }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="material_title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="material_title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="material_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="material_description" name="description" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="material_file" class="form-label">File (Optional)</label>
+                        <input type="file" class="form-control" id="material_file" name="file">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Material</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

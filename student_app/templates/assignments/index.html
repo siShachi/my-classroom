@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Assignments - {{ course.code }} - SMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Assignments for {{ course.code }}: {{ course.title }}</h1>
+    {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
+    <a href="{{ url_for('assignments.create', course_id=course.id) }}" class="btn btn-success">Create Assignment</a>
+    {% endif %}
+</div>
+
+<div class="mb-3">
+    <a href="{{ url_for('courses.view', course_id=course.id) }}" class="btn btn-secondary">Back to Course</a>
+</div>
+
+{% if assignments %}
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Due Date</th>
+                <th>Points</th>
+                {% if current_user.role == 'student' %}
+                <th>Status</th>
+                {% endif %}
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in assignments %}
+            <tr>
+                <td>{{ assignment.title }}</td>
+                <td>
+                    {% if assignment.due_date %}
+                    {{ assignment.due_date.strftime('%b %d, %Y at %H:%M') }}
+                    {% if assignment.due_date < now %}
+                    <span class="badge bg-danger">Overdue</span>
+                    {% endif %}
+                    {% else %}
+                    No due date
+                    {% endif %}
+                </td>
+                <td>{{ assignment.points }}</td>
+                {% if current_user.role == 'student' %}
+                <td>
+                    {% if submissions[assignment.id] %}
+                    <span class="badge bg-success">Submitted</span>
+                    {% if submissions[assignment.id].grade %}
+                    <span class="badge bg-info">Graded: {{ submissions[assignment.id].grade }}/{{ assignment.points }}</span>
+                    {% endif %}
+                    {% else %}
+                    <span class="badge bg-warning text-dark">Not Submitted</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+                <td>
+                    <a href="{{ url_for('assignments.view', assignment_id=assignment.id) }}" class="btn btn-sm btn-primary">View</a>
+                    {% if current_user.role == 'student' %}
+                    <a href="{{ url_for('assignments.submit', assignment_id=assignment.id) }}" class="btn btn-sm btn-success">
+                        {% if submissions[assignment.id] %}Resubmit{% else %}Submit{% endif %}
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <p>No assignments have been created for this course yet.</p>
+</div>
+{% endif %}
+{% endblock %}
