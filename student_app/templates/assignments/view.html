@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ assignment.title }} - SMS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ assignment.title }}</h1>
+        <h5>{{ course.code }}: {{ course.title }}</h5>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('assignments.index', course_id=course.id) }}" class="btn btn-secondary">Back to Assignments</a>
+        {% if current_user.role == 'student' %}
+        <a href="{{ url_for('assignments.submit', assignment_id=assignment.id) }}" class="btn btn-primary">
+            {% if submission %}Resubmit{% else %}Submit{% endif %}
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Assignment Details</h3>
+            </div>
+            <div class="card-body">
+                <p>{{ assignment.description }}</p>
+                <hr>
+                <p><strong>Due Date:</strong> 
+                    {% if assignment.due_date %}
+                    {{ assignment.due_date.strftime('%B %d, %Y at %H:%M') }}
+                    {% if assignment.due_date < now %}
+                    <span class="badge bg-danger">Overdue</span>
+                    {% endif %}
+                    {% else %}
+                    No due date
+                    {% endif %}
+                </p>
+                <p><strong>Points:</strong> {{ assignment.points }}</p>
+            </div>
+        </div>
+        
+        {% if current_user.role == 'student' and submission %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>My Submission</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Submitted:</strong> {{ submission.submitted_at.strftime('%B %d, %Y at %H:%M') }}</p>
+                {% if submission.content %}
+                <div class="mb-3">
+                    <label class="form-label">Content</label>
+                    <div class="form-control" style="min-height: 100px;">{{ submission.content }}</div>
+                </div>
+                {% endif %}
+                
+                {% if submission.file_path %}
+                <p><strong>File:</strong> <a href="{{ url_for('static', filename=submission.file_path) }}" target="_blank">Download</a></p>
+                {% endif %}
+                
+                {% if submission.grade %}
+                <div class="alert alert-info">
+                    <h4>Graded: {{ submission.grade }}/{{ assignment.points }}</h4>
+                    {% if submission.feedback %}
+                    <hr>
+                    <h5>Feedback:</h5>
+                    <p>{{ submission.feedback }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Student Submissions</h3>
+            </div>
+            <div class="card-body">
+                {% if submissions %}
+                <div class="list-group">
+                    {% for sub in submissions %}
+                    <div class="list-group-item">
+                        <h5>{{ sub.student.first_name }} {{ sub.student.last_name }}</h5>
+                        <p><small>Submitted: {{ sub.submitted_at.strftime('%B %d, %Y') }}</small></p>
+                        
+                        {% if sub.file_path %}
+                        <p><a href="{{ url_for('static', filename=sub.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">View File</a></p>
+                        {% endif %}
+                        
+                        <form action="{{ url_for('assignments.grade', assignment_id=assignment.id, submission_id=sub.id) }}" method="POST">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-4">
+                                    <label for="grade{{ sub.id }}" class="form-label">Grade</label>
+                                    <input type="number" class="form-control form-control-sm" id="grade{{ sub.id }}" name="grade" value="{{ sub.grade }}" min="0" max="{{ assignment.points }}">
+                                </div>
+                                <div class="col-md-8">
+                                    <label for="feedback{{ sub.id }}" class="form-label">Feedback</label>
+                                    <textarea class="form-control form-control-sm" id="feedback{{ sub.id }}" name="feedback" rows="2">{{ sub.feedback }}</textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-success">Save Grade</button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No submissions yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
