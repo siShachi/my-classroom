@@ -3,3 +3,5 @@ __pycache__/
 .env
 instance/
 */__pycache__
+.venv
+fresh_venv

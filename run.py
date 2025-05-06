@@ -4,7 +4,7 @@ import sys
 # Add the current directory to the path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__,)))
 
-from student_app import create_app
+from .student_app import create_app
 
 app = create_app()
 
