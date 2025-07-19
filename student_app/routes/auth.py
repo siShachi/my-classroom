@@ -24,6 +24,7 @@ def login():
         
         login_user(user, remember=remember)
         next_page = request.args.get('next')
+        flash(f'Welcome back, {user.first_name} {user.last_name}!', 'login_success')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('courses.index')
         return redirect(next_page)
