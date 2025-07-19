@@ -3,3 +3,5 @@ __pycache__/
 .env
 instance/
 */__pycache__
+student_app/static/uploads/*
+app/static/uploads/*
