@@ -4,3 +4,6 @@ instance/
 */__pycache__
 student_app/static/uploads/*
 app/static/uploads/*
+.venv
+fresh_venv
+

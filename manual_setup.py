@@ -5,9 +5,9 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
 # Add the current directory to sys.path if it's not already there
-# current_dir = os.path.dirname(os.path.abspath(__file__))
-# if current_dir not in sys.path:
-#     sys.path.insert(0, current_dir)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
 
 # Create Flask app
 app = Flask(__name__)
