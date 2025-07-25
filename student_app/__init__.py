@@ -23,6 +23,9 @@ def create_app(config_class=Config):
     app.register_blueprint(courses_blueprint)
     app.register_blueprint(assignments_blueprint)
     app.register_blueprint(users_blueprint)
+
+    from student_app.routes.home import home as home_blueprint
+    app.register_blueprint(home_blueprint) 
     
     with app.app_context():
         db.create_all()
