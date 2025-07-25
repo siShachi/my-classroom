@@ -68,3 +68,4 @@ webencodings==0.5.1
 Werkzeug==2.3.8
 WTForms==3.2.1
 yarg==0.1.9
+redis==6.2.0
