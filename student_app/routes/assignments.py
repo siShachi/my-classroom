@@ -145,7 +145,7 @@ def submit(assignment_id):
             if relative_path and file and file.filename:
                 existing_submission.file_path = relative_path
             existing_submission.submitted_at = datetime.utcnow()
-            if datetime.now(timezone.utc) > assignment.due_date:
+            if datetime.now(timezone.utc).timestamp() > assignment.due_date.timestamp():
                 existing_submission.is_late = True
             db.session.commit()
             flash('Submission updated successfully!')
@@ -156,7 +156,7 @@ def submit(assignment_id):
                 file_path=relative_path,
                 student_id=current_user.id,
                 assignment_id=assignment.id,
-                is_late=datetime.now(timezone.utc) > assignment.due_date
+                is_late=datetime.now(timezone.utc).timestamp() > assignment.due_date.timestamp()
             )
             
             db.session.add(submission)

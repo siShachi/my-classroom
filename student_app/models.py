@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from student_app import db, login_manager
@@ -78,7 +78,7 @@ class Submission(db.Model):
     feedback = db.Column(db.Text)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     assignment_id = db.Column(db.Integer, db.ForeignKey('assignment.id'))
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     is_late = db.Column(db.Boolean, default=False)    
     def __repr__(self):
         return f'<Submission {self.id}>'

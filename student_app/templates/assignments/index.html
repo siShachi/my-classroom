@@ -21,6 +21,7 @@
             <tr>
                 <th>Title</th>
                 <th>Due Date</th>
+                <th>Time Remaining</th> {# New column for the timer #}
                 <th>Points</th>
                 {% if current_user.role == 'student' %}
                 <th>Status</th>
@@ -35,11 +36,24 @@
                 <td>
                     {% if assignment.due_date %}
                     {{ assignment.due_date.strftime('%b %d, %Y at %H:%M') }}
-                    {% if assignment.due_date < now %}
-                    <span class="badge bg-danger">Overdue</span>
-                    {% endif %}
+                    {# The "Overdue" badge below is for initial render and non-JS fallback.
+                       The JS timer will dynamically update this status. #}
+                    <!-- {% if assignment.due_date < now %}
+                    <span class="badge bg-danger ms-2">Overdue</span>
+                    {% endif %} -->
                     {% else %}
                     No due date
+                    {% endif %}
+                </td>
+                <td>
+                    {% if assignment.due_date %}
+                    {# This span will be updated by JavaScript #}
+                    <span class="assignment-timer" data-assignment-id="{{ assignment.id }}"
+                          data-due-date="{{ assignment.due_date.isoformat() }}">
+                        Loading timer...
+                    </span>
+                    {% else %}
+                    N/A
                     {% endif %}
                 </td>
                 <td>{{ assignment.points }}</td>
@@ -48,7 +62,7 @@
                     {% if submissions[assignment.id] %}
                     <span class="badge bg-success">Submitted</span>
                     {% if submissions[assignment.id].grade %}
-                    <span class="badge bg-info">Graded: {{ submissions[assignment.id].grade }}/{{ assignment.points }}</span>
+                    <span class="badge bg-info ms-1">Graded: {{ submissions[assignment.id].grade }}/{{ assignment.points }}</span>
                     {% endif %}
                     {% else %}
                     <span class="badge bg-warning text-dark">Not Submitted</span>
@@ -73,4 +87,62 @@
     <p>No assignments have been created for this course yet.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+{{ super() }} {# Keep any scripts from base.html #}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Function to format time remaining
+        function formatTimeRemaining(milliseconds) {
+            if (milliseconds <= 0) {
+                return '<span class="text-danger">Overdue</span>';
+            }
+
+            let totalSeconds = Math.floor(milliseconds / 1000);
+            let days = Math.floor(totalSeconds / (3600 * 24));
+            totalSeconds %= (3600 * 24);
+            let hours = Math.floor(totalSeconds / 3600);
+            totalSeconds %= 3600;
+            let minutes = Math.floor(totalSeconds / 60);
+            let seconds = totalSeconds % 60;
+
+            // Pad with leading zeros
+            days = String(days).padStart(2, '0');
+            hours = String(hours).padStart(2, '0');
+            minutes = String(minutes).padStart(2, '0');
+            seconds = String(seconds).padStart(2, '0');
+
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            } else {
+                return `${hours}h ${minutes}m ${seconds}s`;
+            }
+        }
+
+        // Function to update all timers
+        function updateAllTimers() {
+            const timerElements = document.querySelectorAll('.assignment-timer');
+            const now = new Date(); // Current time in client's local timezone
+
+            timerElements.forEach(timerElement => {
+                const dueDateString = timerElement.dataset.dueDate;
+                // Parse the ISO formatted UTC string into a Date object.
+                // This will correctly interpret it as UTC.
+                const dueDate = new Date(dueDateString);
+
+                const timeRemaining = dueDate.getTime() - now.getTime();
+
+                timerElement.innerHTML = formatTimeRemaining(timeRemaining);
+            });
+        }
+
+        // Initial update
+        updateAllTimers();
+
+        // Update timers every second
+        setInterval(updateAllTimers, 1000);
+    });
+</script>
 {% endblock %}

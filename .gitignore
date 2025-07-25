@@ -7,3 +7,4 @@ app/static/uploads/*
 .venv
 fresh_venv
 
+venv

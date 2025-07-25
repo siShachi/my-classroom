@@ -86,7 +86,7 @@
                     {% for sub in submissions %}
                     <div class="list-group-item">
                         <h5>{{ sub.student.first_name }} {{ sub.student.last_name }}</h5>
-                        <p><small>Submitted: {{ sub.submitted_at.strftime('%B %d, %Y') }}</small></p>
+                        <p><small>Submitted: {{ sub.submitted_at.strftime('%B %d, %Y') }} {{ sub.is_late and '(Late)' or '(On-Time)' }}</small></p>
                         
                         {% if sub.file_path %}
                         <p><a href="{{ url_for('static', filename=sub.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">View File</a></p>
