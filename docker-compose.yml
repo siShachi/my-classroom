@@ -9,6 +9,17 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
-      - .:/app 
+      - .:/app
+    depends_on:
+      - redis
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: redis_server
+    ports:
+      - "6379:6379"
     restart: always
