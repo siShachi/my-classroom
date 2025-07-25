@@ -7,6 +7,7 @@ import redis as Redis
 import os
 LOGIN_FAILURE_LIMIT = 3
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+print("Redis URL: ", REDIS_URL)
 redis = Redis.Redis.from_url(REDIS_URL)
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
