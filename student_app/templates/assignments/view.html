@@ -24,7 +24,7 @@
         {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
         <div class="card mb-4">
             <div class="card-header">
-                <h3>Student Submissions</h3>
+                <h3>Reports</h3>
             </div>
             <div class="card-body">
                 {% if submissions %}
