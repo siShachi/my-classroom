@@ -9,7 +9,7 @@ services:
     environment:
       - FLASK_APP=run.py
       - FLASK_ENV=development
-      - REDIS_HOST=redis
+      - REDIS_HOST=localhost
       - REDIS_PORT=6379
     volumes:
       - .:/app
