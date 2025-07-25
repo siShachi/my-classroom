@@ -79,7 +79,7 @@ class Submission(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     assignment_id = db.Column(db.Integer, db.ForeignKey('assignment.id'))
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    is_late = db.Column(db.Boolean, default=False)    
     def __repr__(self):
         return f'<Submission {self.id}>'
 

@@ -5,7 +5,8 @@ from student_app import db
 import os
 from werkzeug.utils import secure_filename
 from config import Config
-from datetime import datetime
+from datetime import datetime, timezone
+import time
 
 assignments = Blueprint('assignments', __name__, url_prefix='/assignments')
 
@@ -67,7 +68,7 @@ def create(course_id):
         db.session.add(assignment)
         db.session.commit()
         
-        flash('Assignment created successfully!')
+        flash('Assignment created successfully!', category='login_success')
         return redirect(url_for('assignments.index', course_id=course.id))
     
     return render_template('assignments/create.html', course=course)
@@ -144,20 +145,23 @@ def submit(assignment_id):
             if relative_path and file and file.filename:
                 existing_submission.file_path = relative_path
             existing_submission.submitted_at = datetime.utcnow()
-            
+            if datetime.now(timezone.utc) > assignment.due_date:
+                existing_submission.is_late = True
             db.session.commit()
             flash('Submission updated successfully!')
         else:
+
             submission = Submission(
                 content=content,
                 file_path=relative_path,
                 student_id=current_user.id,
-                assignment_id=assignment.id
+                assignment_id=assignment.id,
+                is_late=datetime.now(timezone.utc) > assignment.due_date
             )
             
             db.session.add(submission)
             db.session.commit()
-            flash('Assignment submitted successfully!')
+            flash('Assignment submitted successfully!', category='login_success')
         
         return redirect(url_for('assignments.view', assignment_id=assignment.id))
     
@@ -188,5 +192,5 @@ def grade(assignment_id, submission_id):
     
     db.session.commit()
     
-    flash('Submission graded successfully!')
+    flash('Submission graded successfully!', category='login_success')
     return redirect(url_for('assignments.view', assignment_id=assignment.id))
