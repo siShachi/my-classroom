@@ -6,7 +6,7 @@ from werkzeug.urls import url_parse
 import redis as Redis
 import os
 LOGIN_FAILURE_LIMIT = 3
-redis = Redis.Redis(host=os.environ.get("REDIS_HOST"), port=os.environ.get("REDIS_PORT"), db=0)
+redis = Redis.Redis(host="localhost", port=6379, db=0)
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
