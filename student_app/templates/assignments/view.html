@@ -19,7 +19,72 @@
 </div>
 
 <div class="row">
+    {# Student Submissions (for instructor/admin) now on the left, taking 8 columns #}
     <div class="col-md-8">
+        {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Student Submissions</h3>
+            </div>
+            <div class="card-body">
+                {% if submissions %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Grade</th>
+                                <th>Feedback</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sub in submissions %}
+                            <tr>
+                                <td>{{ sub.student.first_name }} {{ sub.student.last_name }}</td>
+                                <td>
+                                    {% if sub.grade is not none %}
+                                        {{ sub.grade }}/{{ assignment.points }}
+                                    {% else %}
+                                        Not Graded
+                                    {% endif %}
+                                    {% if sub.is_late %}<span class="badge bg-warning ms-1">Late</span>{% endif %}
+                                </td>
+                                <td>
+                                    {% if sub.feedback %}
+                                        {{ sub.feedback | truncate(50, True, '...') }} {# Truncate for table view #}
+                                    {% else %}
+                                        No feedback
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-info grade-submission-btn"
+                                        data-bs-toggle="modal" data-bs-target="#gradeSubmissionModal"
+                                        data-submission-id="{{ sub.id }}"
+                                        data-student-name="{{ sub.student.first_name }} {{ sub.student.last_name }}"
+                                        data-submission-content="{{ sub.content | e }}" {# Escape HTML for safety #}
+                                        data-file-path="{{ url_for('static', filename=sub.file_path) if sub.file_path else '' }}"
+                                        data-current-grade="{{ sub.grade if sub.grade is not none else '' }}"
+                                        data-current-feedback="{{ sub.feedback | e }}" {# Escape HTML for safety #}
+                                        data-assignment-points="{{ assignment.points }}">
+                                        Grade/View
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>No submissions yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {# Assignment Details and My Submission (for student) now on the right, taking 4 columns #}
+    <div class="col-md-4">
         <div class="card mb-4">
             <div class="card-header">
                 <h3>Assignment Details</h3>
@@ -27,11 +92,11 @@
             <div class="card-body">
                 <p>{{ assignment.description }}</p>
                 <hr>
-                <p><strong>Due Date:</strong> 
+                <p><strong>Due Date:</strong>
                     {% if assignment.due_date %}
                     {{ assignment.due_date.strftime('%B %d, %Y at %H:%M') }}
                     {% if assignment.due_date < now %}
-                    <span class="badge bg-danger">Overdue</span>
+                    <span class="badge bg-danger ms-2">Overdue</span>
                     {% endif %}
                     {% else %}
                     No due date
@@ -40,7 +105,7 @@
                 <p><strong>Points:</strong> {{ assignment.points }}</p>
             </div>
         </div>
-        
+
         {% if current_user.role == 'student' and submission %}
         <div class="card mb-4">
             <div class="card-header">
@@ -51,15 +116,15 @@
                 {% if submission.content %}
                 <div class="mb-3">
                     <label class="form-label">Content</label>
-                    <div class="form-control" style="min-height: 100px;">{{ submission.content }}</div>
+                    <div class="form-control" style="min-height: 100px; white-space: pre-wrap;">{{ submission.content }}</div>
                 </div>
                 {% endif %}
-                
+
                 {% if submission.file_path %}
                 <p><strong>File:</strong> <a href="{{ url_for('static', filename=submission.file_path) }}" target="_blank">Download</a></p>
                 {% endif %}
-                
-                {% if submission.grade %}
+
+                {% if submission.grade is not none %} {# Use is not none to handle 0 grade #}
                 <div class="alert alert-info">
                     <h4>Graded: {{ submission.grade }}/{{ assignment.points }}</h4>
                     {% if submission.feedback %}
@@ -73,47 +138,99 @@
         </div>
         {% endif %}
     </div>
-    
-    <div class="col-md-4">
-        {% if current_user.role in ['instructor', 'admin'] and current_user.id == course.instructor_id %}
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3>Student Submissions</h3>
-            </div>
-            <div class="card-body">
-                {% if submissions %}
-                <div class="list-group">
-                    {% for sub in submissions %}
-                    <div class="list-group-item">
-                        <h5>{{ sub.student.first_name }} {{ sub.student.last_name }}</h5>
-                        <p><small>Submitted: {{ sub.submitted_at.strftime('%B %d, %Y') }} {{ sub.is_late and '(Late)' or '(On-Time)' }}</small></p>
-                        
-                        {% if sub.file_path %}
-                        <p><a href="{{ url_for('static', filename=sub.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">View File</a></p>
-                        {% endif %}
-                        
-                        <form action="{{ url_for('assignments.grade', assignment_id=assignment.id, submission_id=sub.id) }}" method="POST">
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-4">
-                                    <label for="grade{{ sub.id }}" class="form-label">Grade</label>
-                                    <input type="number" class="form-control form-control-sm" id="grade{{ sub.id }}" name="grade" value="{{ sub.grade }}" min="0" max="{{ assignment.points }}">
-                                </div>
-                                <div class="col-md-8">
-                                    <label for="feedback{{ sub.id }}" class="form-label">Feedback</label>
-                                    <textarea class="form-control form-control-sm" id="feedback{{ sub.id }}" name="feedback" rows="2">{{ sub.feedback }}</textarea>
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-sm btn-success">Save Grade</button>
-                        </form>
-                    </div>
-                    {% endfor %}
+</div>
+
+<!-- Grade Submission Modal -->
+<div class="modal fade" id="gradeSubmissionModal" tabindex="-1" aria-labelledby="gradeSubmissionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="gradeSubmissionForm" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="gradeSubmissionModalLabel">Grade Submission for <span id="modalStudentName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                {% else %}
-                <p>No submissions yet.</p>
-                {% endif %}
-            </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="modalSubmissionContent" class="form-label">Submission Content:</label>
+                        <div id="modalSubmissionContent" class="form-control bg-light" style="min-height: 100px; white-space: pre-wrap;"></div>
+                    </div>
+                    <div class="mb-3" id="modalFileLinkContainer" style="display: none;">
+                        <label class="form-label">Submitted File:</label>
+                        <p><a id="modalFileLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">Download Submitted File</a></p>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalGrade" class="form-label">Grade (out of <span id="modalAssignmentPoints"></span>):</label>
+                        <input type="number" class="form-control" id="modalGrade" name="grade" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modalFeedback" class="form-label">Feedback:</label>
+                        <textarea class="form-control" id="modalFeedback" name="feedback" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">Save Grade</button>
+                </div>
+            </form>
         </div>
-        {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the modal element
+        const gradeSubmissionModal = document.getElementById('gradeSubmissionModal');
+
+        // Add an event listener for when the modal is shown
+        gradeSubmissionModal.addEventListener('show.bs.modal', function (event) {
+            // Button that triggered the modal
+            const button = event.relatedTarget;
+
+            // Extract info from data-* attributes
+            const submissionId = button.getAttribute('data-submission-id');
+            const studentName = button.getAttribute('data-student-name');
+            const submissionContent = button.getAttribute('data-submission-content');
+            const filePath = button.getAttribute('data-file-path');
+            const currentGrade = button.getAttribute('data-current-grade');
+            const currentFeedback = button.getAttribute('data-current-feedback');
+            const assignmentPoints = button.getAttribute('data-assignment-points');
+
+            // Get references to modal elements
+            const modalTitle = gradeSubmissionModal.querySelector('#modalStudentName');
+            const modalSubmissionContent = gradeSubmissionModal.querySelector('#modalSubmissionContent');
+            const modalFileLinkContainer = gradeSubmissionModal.querySelector('#modalFileLinkContainer');
+            const modalFileLink = gradeSubmissionModal.querySelector('#modalFileLink');
+            const modalGradeInput = gradeSubmissionModal.querySelector('#modalGrade');
+            const modalFeedbackTextarea = gradeSubmissionModal.querySelector('#modalFeedback');
+            const modalAssignmentPoints = gradeSubmissionModal.querySelector('#modalAssignmentPoints');
+            const gradeSubmissionForm = gradeSubmissionModal.querySelector('#gradeSubmissionForm');
+
+            // Populate modal fields with data
+            modalTitle.textContent = studentName;
+            // Using textContent to prevent XSS if content contains HTML
+            modalSubmissionContent.textContent = submissionContent;
+            modalGradeInput.value = currentGrade;
+            modalFeedbackTextarea.value = currentFeedback;
+            modalAssignmentPoints.textContent = assignmentPoints;
+            modalGradeInput.max = assignmentPoints; // Set max attribute for grade input
+
+            // Show/hide file link based on whether a file path exists
+            if (filePath) {
+                modalFileLink.href = filePath;
+                modalFileLinkContainer.style.display = 'block';
+            } else {
+                modalFileLink.href = '#'; // Clear href if no file
+                modalFileLinkContainer.style.display = 'none';
+            }
+
+            // Dynamically set the form action for grading
+            // Assuming `assignment.id` is available in the Jinja context of this template
+            const assignmentId = {{ assignment.id }};
+            gradeSubmissionForm.action = `/assignments/${assignmentId}/grade/${submissionId}`;
+        });
+    });
+</script>
 {% endblock %}
