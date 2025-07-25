@@ -3,6 +3,10 @@ from flask_login import login_user, logout_user, login_required, current_user
 from student_app.models import User
 from student_app import db
 from werkzeug.urls import url_parse
+import redis as Redis
+import os
+LOGIN_FAILURE_LIMIT = 3
+redis = Redis.Redis(host=os.environ.get("REDIS_HOST"), port=os.environ.get("REDIS_PORT"), db=0)
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -10,7 +14,11 @@ auth = Blueprint('auth', __name__, url_prefix='/auth')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('courses.index'))
-    
+     # Check if login failures are too high
+    ip = request.remote_addr
+    if redis.get(f"student_app:login_failures:{ip}"):
+        if int(redis.get(f"student_app:login_failures:{ip}")) >= LOGIN_FAILURE_LIMIT:
+            return "Too many login failures. Please try again later after some time.", 401
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -19,6 +27,14 @@ def login():
         user = User.query.filter_by(email=email).first()
         
         if not user or not user.check_password(password):
+            ip = request.remote_addr
+            if redis.get(f"student_app:login_failures:{ip}") is None:
+                redis.set(f"student_app:login_failures:{ip}", 1, ex=3600)
+            else:
+                redis.incr(f"student_app:login_failures:{ip}")
+                if int(redis.get(f"student_app:login_failures:{ip}")) >= LOGIN_FAILURE_LIMIT:
+                    flash('Too many login failures. Please try again later.')
+                    return redirect(url_for('auth.login'))
             flash('Please check your login details and try again.')
             return redirect(url_for('auth.login'))
         
